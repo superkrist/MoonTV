@@ -7,6 +7,17 @@ import { getAuthInfoFromCookie } from '@/lib/auth';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  if (process.env.MAINTENANCE_MODE === 'true') {
+    return new NextResponse('Service temporarily unavailable', {
+      status: 503,
+      headers: {
+        'Cache-Control': 'no-store',
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Retry-After': '3600',
+      },
+    });
+  }
+
   // 跳过不需要认证的路径
   if (shouldSkipAuth(pathname)) {
     return NextResponse.next();
@@ -120,11 +131,18 @@ function shouldSkipAuth(pathname: string): boolean {
   const skipPaths = [
     '/_next',
     '/favicon.ico',
-    '/robots.txt',
-    '/manifest.json',
     '/icons/',
+    '/login',
     '/logo.png',
+    '/manifest.json',
+    '/robots.txt',
     '/screenshot.png',
+    '/warning',
+    '/api/cron',
+    '/api/login',
+    '/api/logout',
+    '/api/register',
+    '/api/server-config',
   ];
 
   return skipPaths.some((path) => pathname.startsWith(path));
@@ -133,6 +151,6 @@ function shouldSkipAuth(pathname: string): boolean {
 // 配置middleware匹配规则
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|login|warning|api/login|api/register|api/logout|api/cron|api/server-config).*)',
+    '/((?!_next/static|_next/image|favicon.ico|icons/|logo.png|manifest.json).*)',
   ],
 };
